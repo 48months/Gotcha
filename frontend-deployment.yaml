@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gotcha-frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: gotcha-frontend
+  template:
+    metadata:
+      labels:
+        app: gotcha-frontend
+    spec:
+      containers:
+      - name: frontend
+        image: yourdockerhub/gotcha-frontend:v1
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gotcha-frontend-svc
+spec:
+  selector:
+    app: gotcha-frontend
+  ports:
+  - port: 80
+    targetPort: 80
+  type: ClusterIP
