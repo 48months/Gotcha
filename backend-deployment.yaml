@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gotcha-backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: gotcha-backend
+  template:
+    metadata:
+      labels:
+        app: gotcha-backend
+    spec:
+      containers:
+      - name: backend
+        image: yourdockerhub/gotcha-backend:v1
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gotcha-backend-svc
+spec:
+  selector:
+    app: gotcha-backend
+  ports:
+  - port: 8080
+    targetPort: 8080
+  type: ClusterIP
