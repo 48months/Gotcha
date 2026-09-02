@@ -3,34 +3,38 @@ pipeline {
 
     environment {
 
-        AWS_REGION = "eu-west-1"
-        AWS_ACCOUNT_ID = "558050136406"
+        AWS_REGION     = 'eu-west-1'
+        AWS_ACCOUNT_ID = '558050136406'
 
-        ECR_REPO = "thbs-gotcha"
+        BACKEND_REPO   = 'thbs-gotcha-backend'
+        FRONTEND_REPO  = 'thbs-gotcha-frontend'
 
-        ECR_URI = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO}"
+        CLUSTER_NAME   = 'prod-green'
 
-        CLUSTER_NAME = "thbs-eks"
+        BUILD_TAG      = "${BUILD_NUMBER}"
 
-        BUILD_TAG = "${BUILD_NUMBER}"
+        BACKEND_IMAGE  = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${BACKEND_REPO}"
+        FRONTEND_IMAGE = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${FRONTEND_REPO}"
     }
 
     stages {
 
         stage('Checkout') {
             steps {
-                checkout scm
+                git branch: 'main',
+                url: 'git@github.com:48months/Gotcha.git'
             }
         }
 
-        stage('Login to ECR') {
+        stage('Login ECR') {
             steps {
                 sh '''
                 aws ecr get-login-password \
-                --region ${AWS_REGION} | \
+                  --region ${AWS_REGION} | \
                 docker login \
-                --username AWS \
-                --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
+                  --username AWS \
+                  --password-stdin \
+                  ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
                 '''
             }
         }
@@ -39,9 +43,8 @@ pipeline {
             steps {
                 sh '''
                 docker build \
-                -t backend:${BUILD_TAG} \
-                -f backend/Dockerfile \
-                backend
+                  -t ${BACKEND_IMAGE}:${BUILD_TAG} \
+                  -f backend/Dockerfile backend
                 '''
             }
         }
@@ -50,21 +53,8 @@ pipeline {
             steps {
                 sh '''
                 docker build \
-                -t frontend:${BUILD_TAG} \
-                -f frontend/Dockerfile \
-                frontend
-                '''
-            }
-        }
-
-        stage('Tag Images') {
-            steps {
-                sh '''
-                docker tag backend:${BUILD_TAG} \
-                ${ECR_URI}:backend-${BUILD_TAG}
-
-                docker tag frontend:${BUILD_TAG} \
-                ${ECR_URI}:frontend-${BUILD_TAG}
+                  -t ${FRONTEND_IMAGE}:${BUILD_TAG} \
+                  -f frontend/Dockerfile frontend
                 '''
             }
         }
@@ -72,8 +62,14 @@ pipeline {
         stage('Push Images') {
             steps {
                 sh '''
-                docker push ${ECR_URI}:backend-${BUILD_TAG}
-                docker push ${ECR_URI}:frontend-${BUILD_TAG}
+                docker push ${BACKEND_IMAGE}:${BUILD_TAG}
+                docker push ${FRONTEND_IMAGE}:${BUILD_TAG}
+
+                docker tag ${BACKEND_IMAGE}:${BUILD_TAG} ${BACKEND_IMAGE}:latest
+                docker tag ${FRONTEND_IMAGE}:${BUILD_TAG} ${FRONTEND_IMAGE}:latest
+
+                docker push ${BACKEND_IMAGE}:latest
+                docker push ${FRONTEND_IMAGE}:latest
                 '''
             }
         }
@@ -82,8 +78,8 @@ pipeline {
             steps {
                 sh '''
                 aws eks update-kubeconfig \
-                --region ${AWS_REGION} \
-                --name ${CLUSTER_NAME}
+                  --region ${AWS_REGION} \
+                  --name ${CLUSTER_NAME}
                 '''
             }
         }
@@ -92,7 +88,7 @@ pipeline {
             steps {
                 sh '''
                 kubectl set image deployment/gotcha-backend \
-                backend=${ECR_URI}:backend-${BUILD_TAG} \
+                backend=${BACKEND_IMAGE}:${BUILD_TAG} \
                 -n gotcha
 
                 kubectl rollout status deployment/gotcha-backend -n gotcha
@@ -104,16 +100,26 @@ pipeline {
             steps {
                 sh '''
                 kubectl set image deployment/gotcha-frontend \
-                frontend=${ECR_URI}:frontend-${BUILD_TAG} \
+                frontend=${FRONTEND_IMAGE}:${BUILD_TAG} \
                 -n gotcha
 
                 kubectl rollout status deployment/gotcha-frontend -n gotcha
                 '''
             }
         }
+
     }
 
     post {
+
+        success {
+            echo "Deployment Completed Successfully"
+        }
+
+        failure {
+            echo "Deployment Failed"
+        }
+
         always {
             sh 'docker system prune -af || true'
         }
