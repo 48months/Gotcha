@@ -1,0 +1,25 @@
+
+.border,input{
+  border-style: none;
+  background-color: transparent;
+  color: #344767;
+}
+.outline:focus{
+  outline: none;
+}
+div{
+  cursor: default;
+}
+
+.form-disabled {
+  background-color: #e6e5e5 !important;
+  color: #6c757d;
+  cursor: not-allowed !important;
+  opacity: 0.7;
+}
+
+.form-disabled::placeholder {
+  color: #0d0d0d;
+  opacity: 1;
+  text-align: center;
+}

@@ -1,0 +1,902 @@
+<div class="m-4">
+  <div class="card shadow-lg my-3 bg-body-tertiary rounded">
+    <!-- filter form  -->
+    <form class="card-body row g-3" [formGroup]="cpyForm" (ngSubmit)="onSelectChange()">
+      <!-- select user (only for admin) -->
+      <div class="col-12 col-md-4" *ngIf="isAdmin">
+        <label for="user">Select User</label>
+        <select class="form-select" formControlName="user" (change)="onSelectChange()" id="user">
+          <option *ngFor="let user of users" [ngValue]="user" [disabled]="editable && isCurrentMonth">
+            {{ user | uppercase }}
+          </option>
+        </select>
+      </div>
+      <!-- select year  -->
+      <div class="col-12" [class]="isAdmin ? 'col-md-3' : 'col-md-6'">
+        <label for="year">Select Year</label>
+        <select class="form-select" formControlName="year" (change)="onSelectChange()" id="year">
+          <option *ngFor="let year of years" [ngValue]="year" [disabled]="editable && isCurrentMonth">
+            {{ year }}
+          </option>
+        </select>
+      </div>
+      <!-- select month  -->
+      <div class="col-12" [class]="isAdmin ? 'col-md-3' : 'col-md-6'">
+        <label for="month">Select Month</label>
+        <select class="form-select" formControlName="month" (change)="onSelectChange()" id="month">
+          <option *ngFor="let mon of months" [ngValue]="mon" [disabled]="editable && isCurrentMonth">
+            {{ mon }}
+          </option>
+        </select>
+      </div>
+      <!-- generate button (only for admin) -->
+      <div class="col-12 col-md-2 align-self-end d-flex justify-content-center" *ngIf="isAdmin">
+        <button *ngIf="!generateLoader; else elseButton" type="button" class="btn btn-primary m-0" [disabled]="
+              !serviceAvailability || editable || projectName === null
+            " (click)="onGenerate()">
+          Generate
+        </button>
+      </div>
+      <!-- loading button  -->
+      <ng-template #elseButton>
+        <button type="submit" class="btn btn-primary" disabled>
+          <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+        </button>
+      </ng-template>
+    </form>
+  </div>
+  <!-- output card  -->
+  <div class="card text-center shadow-lg bg-body-tertiary rounded">
+    <!-- card navigation -->
+    <div class="card-header">
+      <ul class="nav nav-tabs card-header-tabs">
+        <li class="nav-item">
+          <a class="nav-link" [class.active]="tabActive === 0" [style.color]="tabActive === 0 ? '#cb0c9f' : '#6c757d'"
+            style="cursor: pointer" (click)="tabActive = 0" aria-current="true">Project Details</a>
+        </li>
+        <li class="nav-item" *ngIf="next && projectType === 0 && !isAllUser">
+          <a class="nav-link" [class.active]="tabActive === 1" [style.color]="tabActive === 1 ? '#cb0c9f' : '#6c757d'"
+            style="cursor: pointer" (click)="tabActive = 1" aria-current="true">Support Allowance</a>
+        </li>
+        <li class="nav-item" *ngIf="next && !isAllUser">
+          <a class="nav-link" [class.active]="tabActive === 2" [style.color]="tabActive === 2 ? '#cb0c9f' : '#6c757d'"
+            style="cursor: pointer" (click)="tabActive = 2" aria-current="true">Shift Allowance</a>
+        </li>
+        <li class="nav-item" *ngIf="next && !isAllUser">
+          <a class="nav-link" [class.active]="tabActive === 3" [style.color]="tabActive === 3 ? '#cb0c9f' : '#6c757d'"
+            style="cursor: pointer" (click)="tabActive = 3" aria-current="true">OOH</a>
+        </li>
+        <li class="nav-item" *ngIf="next && projectType === 0 && !isAllUser">
+          <a class="nav-link" [class.active]="tabActive === 4" [style.color]="tabActive === 4 ? '#cb0c9f' : '#6c757d'"
+            style="cursor: pointer" (click)="tabActive = 4" aria-current="true">On Call</a>
+        </li>
+      </ul>
+    </div>
+    <div *ngIf="editable && selectedTab !== tabActive">
+      <div class="alert alert-primary text-white col-6 mx-auto" *ngIf="!isAdmin">
+        <span class="alert-icon"><i class="ni ni-like-2"></i><b> Warning ! </b></span>
+        <b *ngIf="isCurrentMonth">Submit the date on {{ selectedTabName }}</b>
+        <b *ngIf="!isCurrentMonth">
+          Updating for {{ months[currentMonth] }} month is only allowed
+        </b>
+      </div>
+      <div class="alert alert-primary text-white col-6 mx-auto" *ngIf="isAdmin">
+        <span class="alert-icon"><i class="ni ni-like-2"></i><b> Warning ! </b></span><b> Submit the date on {{
+          selectedTabName }}</b>
+      </div>
+    </div>
+    <div *ngIf="!submitLoader; else elseLoad">
+      <div *ngIf="display; then thenBlock; else elseBlock"></div>
+      <!-- output card body  -->
+      <ng-template #thenBlock>
+        <div [ngSwitch]="tabActive">
+          <!-- project details -->
+          <div *ngSwitchCase="0">
+            <div class="card-body row g-3">
+              <div class="col-12 col-md-6">
+                <div class="card shadow p-2">
+                  <div class="card-body">
+                    <div class="card-title">
+                      <h3>Project Name</h3>
+                    </div>
+                    <div class="mx-6 my-2" *ngFor="
+                        let name of projectNameList;
+                        let nameIndex = index
+                      ">
+                      <div class="d-flex justify-content-center py-2" (click)="projectName = nameIndex" [class]="
+                          projectName === nameIndex
+                            ? 'border border-2 border-primary border-opacity-25 rounded '
+                            : ''
+                        ">
+                        <input type="radio" [value]="name" class="m-1" name="projectName" id="projName"
+                          [disabled]="editable" [checked]="projectName === nameIndex" />
+                        <h6 class="card-subtitle m-1" for="projName">
+                          {{ name }}
+                        </h6>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-12 col-md-6" *ngIf="projectName !== null">
+                <div class="card shadow p-2">
+                  <div class="card-body">
+                    <div class="card-title">
+                      <h3>Project Type</h3>
+                    </div>
+                    <div *ngFor="
+                        let type of projectTypeList;
+                        let typeIndex = index
+                      " class="mx-6 my-2">
+                      <div class="d-flex justify-content-center py-2" [class]="
+                          projectType === typeIndex
+                            ? 'border border-2 border-primary border-opacity-25 rounded '
+                            : ''
+                        " (click)="projectType = typeIndex">
+                        <input type="radio" [value]="type" class="m-1" name="projectType" id="projType"
+                          [disabled]="editable" [checked]="projectType === typeIndex" />
+                        <h6 class="card-subtitle m-1" for="projType">
+                          {{ type }}
+                        </h6>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-12 col-md-6" *ngIf="projectType !== null && !isAllUser">
+                <div class="card shadow p-2">
+                  <div class="card-body">
+                    <div class="card-title">
+                      <h3>Year</h3>
+                    </div>
+                    <div class="mx-6 my-2" *ngFor="
+                        let year of projectYearList[projectName];
+                        let yearIndex = index
+                      ">
+                      <div class="d-flex justify-content-center py-2" (click)="projectYear = yearIndex" [class]="
+                          projectYear === yearIndex
+                            ? 'border border-2 border-primary border-opacity-25 rounded '
+                            : ''
+                        ">
+                        <input type="radio" class="m-1" [value]="year" name="componentId" id="component"
+                          [checked]="projectYear === yearIndex" [disabled]="editable" />
+                        <h6 class="card-subtitle m-1" for="component">
+                          {{ year }}
+                        </h6>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-12 col-md-6" *ngIf="projectYear !== null && !isAllUser">
+                <div class="card shadow p-2">
+                  <div class="card-body">
+                    <div class="card-title d-flex justify-content-between">
+                      <h3>Component</h3>
+                      <button class="btn text-primary" style="box-shadow: none" (click)="onSave()"
+                        [disabled]="componentIds.length === 0 || editable">
+                        save
+                      </button>
+                    </div>
+                    <div class="mx-6 my-1" *ngFor="
+                        let component of componentIdList[projectName][
+                          projectYear
+                        ];
+                        let componentIndex = index
+                      ">
+                      <div class="d-flex justify-content-center py-0" (click)="
+                          componentIds.includes(component)
+                            ? componentIds.splice(
+                                componentIds.indexOf(component),
+                                1
+                              )
+                            : componentIds.push(component)
+                        ">
+                        <input type="checkbox" class="m-1 text-primary" [value]="component" name="componentId"
+                          id="component" [disabled]="editable" [checked]="componentIds.includes(component)" />
+                        <h6 class="card-subtitle m-1" for="component">
+                          {{ component }}
+                        </h6>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- support allowance output -->
+          <div *ngSwitchCase="1">
+            <div class="card-body row g-3">
+              <div class="col-12 col-md-6" *ngFor="
+                  let sup of selectedSupportAllowance;
+                  let tabIndex = index
+                ">
+                <div class="card shadow p-2">
+                  <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                      <div class="card-title my-1 text-start">
+                        <p class="text-primary text-bold m-0" style="font-size: xx-small">
+                          Leave Type
+                        </p>
+                        <h2 class="m-0">{{ sup?.["leaveType"] }}</h2>
+                      </div>
+                      <div class="card-title my-1 px-2 text-start">
+                        <p class="text-primary text-bold m-0" style="font-size: xx-small">
+                          Days
+                        </p>
+                        <h2 class="m-0">{{ sup?.["noOfDays"] }}</h2>
+                      </div>
+                    </div>
+                    <div class="flex-column align-item-start me-auto">
+                      <div class="d-flex justify-content-between my-auto me-2">
+                        <h6 class="card-subtitle text-primary text-start">
+                          Dates
+                        </h6>
+                        <button *ngIf="sup?.['leaveType'] !== 'Holiday'" class="btn py-1 px-2 my-auto" title="Add Date"
+                          style="box-shadow: none" (click)="onDateAdd(tabActive, tabIndex)" [disabled]="editable">
+                          <i class="fa-regular fa-calendar-plus" style="font-size: large; color: green"></i>
+                        </button>
+                      </div>
+                      <ul class="flex-column pe-2">
+                        <li class="d-flex justify-content-between my-1"
+                          *ngFor="let date of sup?.['dates'];let dateIndex=index">
+                          <input type="date" class="outline" [value]="date | date : 'yyyy-MM-dd'" [min]="mindate"
+                            [max]="maxdate" [disabled]="
+                              !(
+                                tabActive === selectedTab &&
+                                tabIndex === selectedTabIndex &&
+                                dateIndex === selectedDateIndex &&
+                                editable
+                              )
+                            " (change)="onDateChange($event, tabActive)" />
+                          <div *ngIf="sup?.['leaveType'] !== 'Holiday'">
+                            <button class="btn py-1 px-2 my-auto" title="Edit Date" style="box-shadow: none" *ngIf="
+                              !(
+                                tabActive === selectedTab &&
+                                tabIndex === selectedTabIndex &&
+                                dateIndex === selectedDateIndex &&
+                                editable
+                              )
+                            " [disabled]="editable" (click)="onDateEdit(tabActive, tabIndex, dateIndex)">
+                              <i class="fa-regular fa-pen-to-square" style="font-size: large; color: #cb0c9f"></i>
+                            </button>
+                            <button class="btn py-1 px-2 my-auto" title="Set Date" style="box-shadow: none" *ngIf="
+                              tabActive === selectedTab &&
+                              tabIndex === selectedTabIndex &&
+                              dateIndex === selectedDateIndex &&
+                              editable
+                            " (click)="
+                              onDateSubmit(tabActive, tabIndex, dateIndex)
+                            ">
+                              <i class="fa-solid fa-check" style="font-size: large; color: green"></i>
+                            </button>
+                            <button class="btn py-1 px-2 my-auto" title="Delete Date" style="box-shadow: none" (click)="
+                              openDeleteConfirmModal(
+                                deleteConfirm,
+                                tabActive,
+                                tabIndex,
+                                dateIndex
+                              )
+                            " [disabled]="
+                              editable &&
+                              (tabActive !== selectedTab ||
+                                tabIndex !== selectedTabIndex ||
+                                dateIndex !== selectedDateIndex)
+                            ">
+                              <i class="fa-regular fa-trash-can" style="font-size: large; color: red"></i>
+                            </button>
+                          </div>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- shift allowance output  -->
+          <div *ngSwitchCase="2">
+            <div class="card-body row g-3">
+              <div class="col-12 col-md-6" *ngFor="
+                  let shft of selectedShiftAllowance;
+                  let tabIndex = index
+                ">
+                <div class="card shadow p-2">
+                  <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                      <div class="card-title my-1 text-start">
+                        <p class="text-primary text-bold m-0" style="font-size: xx-small">
+                          Shift Slab
+                        </p>
+                        <h2 class="m-0">{{ shft?.["shiftSlab"] }}</h2>
+                      </div>
+                      <div class="card-title my-1 px-2 text-start">
+                        <p class="text-primary text-bold m-0" style="font-size: xx-small">
+                          Days
+                        </p>
+                        <h2 class="m-0">{{ shft?.["noOfDays"] }}</h2>
+                      </div>
+                    </div>
+                    <div class="flex-column align-item-start me-auto">
+                      <div class="row">
+                        <h6 class="card-subtitle col-8 text-primary text-start m-0">
+                          Cab Not Availed Days
+                        </h6>
+                        <button *ngIf="
+                            tabActive === selectedTab &&
+                            tabIndex === selectedTabIndex &&
+                            -1 === selectedDateIndex &&
+                            editable
+                          " class="btn col-1 m-0 p-0" title="Decrease"
+                          style="box-shadow: none; color: red; font-size: large" (click)="
+                            cabNotAvailedValue[tabIndex] > 0
+                              ? (cabNotAvailedValue[tabIndex] =
+                                  cabNotAvailedValue[tabIndex] - 1)
+                              : null
+                          ">
+                          -
+                        </button>
+                        <p class="m-0 p-0" style="font-weight: bold" [class]="
+                            tabActive === selectedTab &&
+                            tabIndex === selectedTabIndex &&
+                            -1 === selectedDateIndex &&
+                            editable
+                              ? 'col-1'
+                              : 'col-3'
+                          ">
+                          {{ cabNotAvailedValue[tabIndex] }}
+                        </p>
+                        <button *ngIf="
+                            tabActive === selectedTab &&
+                            tabIndex === selectedTabIndex &&
+                            -1 === selectedDateIndex &&
+                            editable
+                          " class="btn col-1 m-0 p-0" title="Increase" style="
+                            box-shadow: none;
+                            color: green;
+                            font-size: large;
+                          " (click)="
+                            cabNotAvailedValue[tabIndex] < 31
+                              ? (cabNotAvailedValue[tabIndex] =
+                                  cabNotAvailedValue[tabIndex] + 1)
+                              : null
+                          ">
+                          +
+                        </button>
+                        <button class="btn col-1 m-0 p-0" title="Edit Date" style="box-shadow: none"
+                          (click)="onDateEdit(tabActive, tabIndex, -1)" [disabled]="editable" *ngIf="
+                            !(
+                              tabActive === selectedTab &&
+                              tabIndex === selectedTabIndex &&
+                              -1 === selectedDateIndex &&
+                              editable
+                            )
+                          ">
+                          <i class="fa-regular fa-pen-to-square" style="font-size: large; color: #cb0c9f"></i>
+                        </button>
+                        <button class="btn col-1 m-0 p-0" title="Set Date" style="box-shadow: none" *ngIf="
+                            tabActive === selectedTab &&
+                            tabIndex === selectedTabIndex &&
+                            -1 === selectedDateIndex &&
+                            editable
+                          " (click)="onDateSubmit(tabActive, tabIndex, -1)">
+                          <i class="fa-solid fa-check" style="font-size: large; color: green"></i>
+                        </button>
+                      </div>
+                      <div class="row">
+                        <h6 class="card-subtitle col-8 text-primary text-start m-0">
+                          Work From Home Days
+                        </h6>
+                        <button *ngIf="
+                            tabActive === selectedTab &&
+                            tabIndex === selectedTabIndex &&
+                            -2 === selectedDateIndex &&
+                            editable
+                          " class="btn col-1 p-0 m-0" title="Decrease"
+                          style="box-shadow: none; color: red; font-size: large" (click)="
+                            wfhValue[tabIndex] > 0
+                              ? (wfhValue[tabIndex] = wfhValue[tabIndex] - 1)
+                              : null
+                          ">
+                          -
+                        </button>
+                        <p class="p-0 m-0" style="font-weight: bold" [class]="
+                            tabActive === selectedTab &&
+                            tabIndex === selectedTabIndex &&
+                            -2 === selectedDateIndex &&
+                            editable
+                              ? 'col-1'
+                              : 'col-3'
+                          ">
+                          {{ wfhValue[tabIndex] }}
+                        </p>
+                        <button *ngIf="
+                            tabActive === selectedTab &&
+                            tabIndex === selectedTabIndex &&
+                            -2 === selectedDateIndex &&
+                            editable
+                          " class="btn col-1 p-0 m-0" title="Increase" style="
+                            box-shadow: none;
+                            color: green;
+                            font-size: large;
+                          " (click)="
+                            wfhValue[tabIndex] < 31
+                              ? (wfhValue[tabIndex] = wfhValue[tabIndex] + 1)
+                              : null
+                          ">
+                          +
+                        </button>
+                        <button class="btn col-1 p-0 m-0" title="Add Date" style="box-shadow: none"
+                          (click)="onDateEdit(tabActive, tabIndex, -2)" [disabled]="editable" *ngIf="
+                            !(
+                              tabActive === selectedTab &&
+                              tabIndex === selectedTabIndex &&
+                              -2 === selectedDateIndex &&
+                              editable
+                            )
+                          ">
+                          <i class="fa-regular fa-pen-to-square" style="font-size: large; color: #cb0c9f"></i>
+                        </button>
+                        <button class="btn col-1 p-0 m-0" title="Set Date" style="box-shadow: none" *ngIf="
+                            tabActive === selectedTab &&
+                            tabIndex === selectedTabIndex &&
+                            -2 === selectedDateIndex &&
+                            editable
+                          " (click)="onDateSubmit(tabActive, tabIndex, -2)">
+                          <i class="fa-solid fa-check" style="font-size: large; color: green"></i>
+                        </button>
+                      </div>
+                      <div class="row">
+                        <h6 class="card-subtitle col-8 text-primary text-start m-0">
+                          Cab Availed Dates
+                        </h6>
+                        <p class="m-0 p-0 col-3 text-center" style="font-weight: bold">
+                          {{ shft?.["cabAvailedDates"].length }}
+                        </p>
+                        <button class="btn col-1 p-0 m-0" title="Add Date" style="box-shadow: none"
+                          (click)="onDateAdd(tabActive, tabIndex)" [disabled]="editable">
+                          <i class="fa-regular fa-calendar-plus" style="font-size: large; color: green"></i>
+                        </button>
+                      </div>
+                      <ul class="flex-column p-0">
+                        <li class="d-flex justify-content-between my-1"
+                          *ngFor="let date of shft?.['cabAvailedDates'];let dateIndex=index">
+                          <input type="date" class="outline" [value]="date | date : 'yyyy-MM-dd'" [min]="mindate"
+                            [max]="maxdate" [disabled]="
+                              !(
+                                tabActive === selectedTab &&
+                                tabIndex === selectedTabIndex &&
+                                dateIndex === selectedDateIndex &&
+                                editable
+                              )
+                            " (change)="onDateChange($event, tabActive)" />
+                          <button class="btn py-1 px-2 my-auto" title="Edit Date" style="box-shadow: none" *ngIf="
+                              !(
+                                tabActive === selectedTab &&
+                                tabIndex === selectedTabIndex &&
+                                dateIndex === selectedDateIndex &&
+                                editable
+                              )
+                            " [disabled]="editable" (click)="onDateEdit(tabActive, tabIndex, dateIndex)">
+                            <i class="fa-regular fa-pen-to-square" style="font-size: large; color: #cb0c9f"></i>
+                          </button>
+                          <button class="btn py-1 px-2 my-auto" title="Set Date" style="box-shadow: none" *ngIf="
+                              tabActive === selectedTab &&
+                              tabIndex === selectedTabIndex &&
+                              dateIndex === selectedDateIndex &&
+                              editable
+                            " (click)="
+                              onDateSubmit(tabActive, tabIndex, dateIndex)
+                            ">
+                            <i class="fa-solid fa-check" style="font-size: large; color: green"></i>
+                          </button>
+                          <button class="btn py-1 px-2 my-auto" title="Delete Date" style="box-shadow: none" (click)="
+                              openDeleteConfirmModal(
+                                deleteConfirm,
+                                tabActive,
+                                tabIndex,
+                                dateIndex
+                              )
+                            " [disabled]="
+                              editable &&
+                              (tabActive !== selectedTab ||
+                                tabIndex !== selectedTabIndex ||
+                                dateIndex !== selectedDateIndex)
+                            ">
+                            <i class="fa-regular fa-trash-can" style="font-size: large; color: red"></i>
+                          </button>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- ooh output  -->
+          <div *ngSwitchCase="3">
+            <div class="card-body">
+              <div class="d-flex justify-content-between px-3">
+                <div>
+                  <input class="form-control border" list="datalistOptions" id="exampleDataList" placeholder="search" />
+                </div>
+                <button class="btn" style="color: green" (click)="onDateAdd(tabActive)" [disabled]="editable">
+                  <i class="fa-solid fa-plus"></i>
+                  Add
+                </button>
+              </div>
+              <div class="card">
+                <div class="table-responsive">
+                  <table class="table align-items-center mb-0">
+                    <thead>
+                      <tr>
+                        <th class="text-uppercase text-primary text-xxs">
+                          Ooh Type
+                        </th>
+                        <th class="text-center text-uppercase text-primary text-xxs">
+                          Date
+                        </th>
+                        <th class="text-center text-uppercase text-primary text-xxs">
+                          Start Time
+                        </th>
+                        <th class="text-center text-uppercase text-primary text-xxs">
+                          End Time
+                        </th>
+                        <th class="text-center text-uppercase text-primary text-xxs">
+                          Description
+                        </th>
+                        <th class="text-center text-uppercase text-primary text-xxs">
+                          Edit
+                        </th>
+                        <th class="text-center text-uppercase text-primary text-xxs">
+                          Delete
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let ooh of selectedOoh; let tabIndex = index">
+                        <td>
+                          <select [(ngModel)]="ooh['oohType']" class="form-select outline border" [disabled]="
+                              !(
+                                editable &&
+                                tabActive === selectedTab &&
+                                tabIndex === selectedTabIndex
+                              )
+                            " #oohtype>
+                            <option *ngFor="let item of oohType" [value]="item">
+                              {{ item }}
+                            </option>
+                          </select>
+                        </td>
+                        <td>
+                          <input type="date" [value]="ooh?.['date'] | date:'yyyy-MM-dd'" [min]="mindate" [max]="maxdate"
+                            [disabled]="
+                              !(
+                                editable &&
+                                tabActive === selectedTab &&
+                                tabIndex === selectedTabIndex
+                              )
+                            " #oohdate />
+                        </td>
+                        <td>
+                          <input class="outline border" [disabled]="
+                              !(
+                                editable &&
+                                tabActive === selectedTab &&
+                                tabIndex === selectedTabIndex
+                              )
+                            " [ngxTimepicker]="OohStart" [value]="ooh['startTime']" #oohstarttime />
+                          <ngx-material-timepicker #OohStart></ngx-material-timepicker>
+                        </td>
+                        <td>
+                          <input class="outline border" [disabled]="
+                              !(
+                                editable &&
+                                tabActive === selectedTab &&
+                                tabIndex === selectedTabIndex
+                              )
+                            " [ngxTimepicker]="OohEnd" [value]="ooh['endTime']" #oohendtime />
+                          <ngx-material-timepicker #OohEnd></ngx-material-timepicker>
+                        </td>
+                        <td>
+                          <input type="text" [(ngModel)]="ooh['description']" class="form-control outline border"
+                            [placeholder]="'Enter description'" [disabled]="
+                           !(
+                                editable &&
+                                tabActive === selectedTab &&
+                                tabIndex === selectedTabIndex
+                              )
+                            " #oohdescription />
+                        </td>
+                        <td>
+                          <button class="btn py-1 px-2 my-auto" title="Edit" style="box-shadow: none" *ngIf="
+                              !(
+                                editable &&
+                                tabActive === selectedTab &&
+                                tabIndex === selectedTabIndex
+                              )
+                            " [disabled]="editable" (click)="onDateEdit(tabActive, tabIndex)">
+                            <i class="fa-regular fa-pen-to-square" style="font-size: large; color: #cb0c9f"></i>
+                          </button>
+                          <button class="btn py-1 px-2 my-auto" title="Set Date" style="box-shadow: none" *ngIf="
+                              editable &&
+                              tabActive === selectedTab &&
+                              tabIndex === selectedTabIndex
+                            " (click)="
+                              onOohSubmit(
+                                oohtype.value,
+                                oohdate.value,
+                                oohstarttime.value,
+                                oohendtime.value,
+                                oohdescription.value,
+                                tabActive,
+                                tabIndex
+
+                              )
+                            " [disabled]="
+                              !oohtype.value ||
+                              !oohdate.value ||
+                              !oohstarttime.value ||
+                              !oohendtime.value ||
+                              !oohdescription.value
+
+                            ">
+                            <i class="fa-solid fa-check" style="font-size: large; color: green"></i>
+                          </button>
+                        </td>
+                        <td>
+                          <button class="btn py-1 px-2 my-auto" title="Delete" style="box-shadow: none" (click)="
+                              openDeleteConfirmModal(
+                                deleteConfirm,
+                                tabActive,
+                                tabIndex
+                              )
+                            " [disabled]="
+                              editable &&
+                              (tabActive !== selectedTab ||
+                                tabIndex !== selectedTabIndex)
+                            ">
+                            <i class="fa-regular fa-trash-can" style="font-size: large; color: red"></i>
+                          </button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- on call output  -->
+          <div *ngSwitchCase="4">
+            <div class="card-body">
+              <div class="d-flex justify-content-between px-3">
+                <div>
+                  <input class="form-control border" list="datalistOptions" id="exampleDataList" placeholder="search" />
+                </div>
+                <button class="btn" style="color: green" (click)="onDateAdd(tabActive)" [disabled]="editable">
+                  <i class="fa-solid fa-plus"></i>
+                  Add
+                </button>
+              </div>
+              <div class="card">
+                <div class="table-responsive">
+                  <table class="table align-items-center mb-0">
+                    <thead>
+                      <tr>
+                        <th class="text-uppercase text-primary text-xxs">
+                          Call Type
+                        </th>
+                        <th class="text-uppercase text-primary text-xxs ps-2">
+                          Timing
+                        </th>
+                        <th class="text-center text-uppercase text-primary text-xxs">
+                          Date
+                        </th>
+                        <th class="text-center text-uppercase text-primary text-xxs">
+                          Start Time
+                        </th>
+                        <th class="text-center text-uppercase text-primary text-xxs">
+                          End Time
+                        </th>
+                        <th class="text-center text-uppercase text-primary text-xxs">
+                          Description
+                        </th>
+                        <th class="text-center text-uppercase text-primary text-xxs">
+                          Edit
+                        </th>
+                        <th class="text-center text-uppercase text-primary text-xxs">
+                          Delete
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="
+                          let oncall of selectedOnCall;
+                          let tabIndex = index
+                        ">
+                        <td>
+                          <select [(ngModel)]="oncall['OnCalltype']" class="form-select outline border" [disabled]="
+                              !(
+                                editable &&
+                                tabActive === selectedTab &&
+                                tabIndex === selectedTabIndex
+                              )
+                            " (change)="onDateChange($event, tabActive, 0)" #oncalltype>
+                            <option *ngFor="let item of leaveType" [value]="item">
+                              {{ item }}
+                            </option>
+                          </select>
+                        </td>
+                        <td>
+                          <select [(ngModel)]="oncall['timings']" class="form-select outline border" disabled>
+                            <option>
+                              {{ shiftSlab[1] }}
+                            </option>
+                          </select>
+                        </td>
+                        <td>
+                          <input type="date" [value]="oncall?.['date'] | date:'yyyy-MM-dd'" [min]="mindate"
+                            [max]="maxdate" [disabled]="
+                              !(
+                                editable &&
+                                tabActive === selectedTab &&
+                                tabIndex === selectedTabIndex
+                              )
+                            " #oncalldate />
+                        </td>
+                        <td>
+                          <input class="outline border" [disabled]="
+                              !(
+                                onCallChanges[0] === CALLOUT &&
+                                editable &&
+                                tabActive === selectedTab &&
+                                tabIndex === selectedTabIndex
+                              )
+                            " [ngxTimepicker]="OnCallStart" [value]="
+                              editable &&
+                              tabActive === selectedTab &&
+                              tabIndex === selectedTabIndex
+                              ? onCallChanges[3]
+                              : oncall?.['startTime'] " #oncallstarttime />
+                          <ngx-material-timepicker #OnCallStart></ngx-material-timepicker>
+                        </td>
+                        <td>
+                          <input class="outline border" [disabled]="
+                              !(
+                                onCallChanges[0] === CALLOUT &&
+                                editable &&
+                                tabActive === selectedTab &&
+                                tabIndex === selectedTabIndex
+                              )
+                            " [ngxTimepicker]="OnCallEnd" [value]="
+                              editable &&
+                              tabActive === selectedTab &&
+                              tabIndex === selectedTabIndex
+                                ? onCallChanges[4]
+                                : oncall['endTime']
+                            " #oncallendtime />
+                          <ngx-material-timepicker #OnCallEnd></ngx-material-timepicker>
+                        </td>
+                        <td>
+                          <input type="text" [(ngModel)]="oncall['description']"
+                            [value]="oncall['OnCalltype'] != CALLOUT ? '' : oncall['description']"
+                            class="form-control outline border"
+                            [placeholder]="oncall['OnCalltype'] != CALLOUT ? '-' : 'Enter description'" [disabled]="
+                              !(
+                                editable &&
+                                tabActive === selectedTab &&
+                                tabIndex === selectedTabIndex &&
+                                oncall['OnCalltype'] == CALLOUT
+                              )
+                            " [class.form-disabled]="oncall['OnCalltype'] != CALLOUT" #oncalldescription />
+                        </td>
+                        <td>
+                          <button class="btn py-1 px-2 my-auto" title="Edit" style="box-shadow: none" *ngIf="
+                              !(
+                                editable &&
+                                tabActive === selectedTab &&
+                                tabIndex === selectedTabIndex
+                              )
+                            " [disabled]="editable" (click)="onDateEdit(tabActive, tabIndex)">
+                            <i class="fa-regular fa-pen-to-square" style="font-size: large; color: #cb0c9f"></i>
+                          </button>
+                          <button type="submit" class="btn py-1 px-2 my-auto" title="Set Date" style="box-shadow: none"
+                            *ngIf="
+                              editable &&
+                              tabActive === selectedTab &&
+                              tabIndex === selectedTabIndex
+                            " (click)="
+                              onOnCallSubmit(
+                                oncalltype.value,
+                                oncalldate.value,
+                                oncallstarttime.value,
+                                oncallendtime.value,
+                                oncalldescription.value,
+                                tabActive,
+                                tabIndex
+                              )
+                            " [disabled]="
+                              !oncalltype.value ||
+                              !oncallstarttime.value ||
+                              !oncallendtime.value ||
+                              !oncalldate.value ||
+                              (oncall['OnCalltype'] === 'Call_Out' && !oncall['description'])
+                            ">
+                            <i class="fa-solid fa-check" style="font-size: large; color: green"></i>
+                          </button>
+                        </td>
+                        <td>
+                          <button class="btn py-1 px-2 my-auto" title="Delete" style="box-shadow: none" (click)="
+                              openDeleteConfirmModal(
+                                deleteConfirm,
+                                tabActive,
+                                tabIndex
+                              )
+                            " [disabled]="
+                              editable &&
+                              (tabActive !== selectedTab ||
+                                tabIndex !== selectedTabIndex)
+                            ">
+                            <i class="fa-regular fa-trash-can" style="font-size: large; color: red"></i>
+                          </button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </ng-template>
+      <!-- card body if no data found or service unavailable -->
+      <ng-template #elseBlock>
+        <div class="card-body m-6" *ngIf="serviceAvailability; else elsePic">
+          <img src="{{ noDataURL }}" alt="No Data Found" />
+          <p class="text-primary" style="font-weight: bold">No Data Found</p>
+        </div>
+        <ng-template #elsePic>
+          <div class="card-body m-6">
+            <img src="{{ serviceUnavailable }}" alt="Service Unavailable" />
+            <p class="text-primary" style="font-weight: bold">
+              Service Unavailable
+            </p>
+          </div>
+        </ng-template>
+      </ng-template>
+    </div>
+    <!-- loading spinner for output card  -->
+    <ng-template #elseLoad>
+      <div class="card-body m-8">
+        <div class="spinner-grow text-primary" role="status"></div>
+      </div>
+    </ng-template>
+  </div>
+  <ng-template #deleteConfirm let-modal>
+    <div class="modal-header">
+      <h4 class="modal-title" id="modal-basic-title">Delete Component</h4>
+      <button type="button" class="btn my-0 mover" aria-label="Close" (click)="modal.dismiss('Cross click')"
+        style="box-shadow: none">
+        <i class="fa-solid fa-xmark" style="font-size: large"></i>
+      </button>
+    </div>
+    <div class="modal-body p-2">
+      <div class="d-flex justify-content-between p-2">
+        <div class="my-auto">Do you want to delete?</div>
+        <button class="btn btn-white" (click)="modal.dismiss('Cross click')">
+          cancel
+        </button>
+        <button *ngIf="!deleting; else delButton" class="btn btn-danger" (click)="
+            onDateDelete(selectedTab, selectedTabIndex, selectedDateIndex)
+          ">
+          delete
+        </button>
+        <ng-template #delButton>
+          <button type="submit" class="btn btn-danger" disabled>
+            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+          </button>
+        </ng-template>
+      </div>
+    </div>
+  </ng-template>
+</div>

@@ -1,0 +1,180 @@
+<div class="page-header min-vh-75">
+  <div class="container">
+    <div class="row">
+      <div class="col-xl-4 col-lg-5 col-md-6 d-flex flex-column mx-auto">
+        <div class="card card-plain mt-7">
+          <div
+            class="card-header pt-2 px-4 pb-0 text-left bg-transparent"
+            [class]="errorMsg ? 'mb-0' : 'mb-4'"
+          >
+            <h3 class="font-weight-bolder text-info text-gradient m-0">
+              Welcome back
+            </h3>
+            <p class="m-0">Enter your email and password to sign in</p>
+          </div>
+          <div
+            *ngIf="errorMsg"
+            class="alert alert-danger alert-dismissible fade show mb-0 p-2"
+            role="alert"
+          >
+            <span class="alert-text"
+              ><strong>{{ errorMsg }}</strong>
+            </span>
+            <button
+              type="button"
+              class="btn-close p-2"
+              data-bs-dismiss="alert"
+              (click)="errorMsg = null"
+              aria-label="Close"
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="card-body" [class]="errorMsg ? 'pt-0' : 'pt-3'">
+            <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+              <div class="form-group">
+                <label>Email</label>
+                <input
+                  [class.is-invalid]="username?.invalid && username?.touched"
+                  [class.is-valid]="username?.valid"
+                  type="email"
+                  class="form-control"
+                  formControlName="username"
+                  (change)="checkTwoFactor()"
+                />
+                <div *ngIf="username?.invalid && username?.touched">
+                  <small
+                    class="text-danger"
+                    *ngIf="username?.errors?.['required']"
+                  >
+                    email is required
+                  </small>
+                  <small
+                    class="text-danger"
+                    *ngIf="username?.errors?.['pattern']"
+                  >
+                    enter a valid email address
+                  </small>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="d-flex justify-content-between m-1">
+                  <label class="m-0">Password</label>
+                  <p class="text-sm m-0">
+                    <a
+                      style="cursor: pointer"
+                      (click)="navigateToForgotPassword()"
+                      class="text-info text-gradient font-weight-bold"
+                      >Forgot password?</a
+                    >
+                  </p>
+                </div>
+                <input
+                  [class.is-invalid]="password?.invalid && password?.touched"
+                  [class.is-valid]="password?.valid"
+                  type="password"
+                  class="form-control"
+                  formControlName="password"
+                />
+                <div *ngIf="password?.invalid && password?.touched">
+                  <small
+                    class="text-danger"
+                    *ngIf="password?.errors?.['required']"
+                    >password is required</small
+                  >
+                  <small
+                    class="text-danger"
+                    *ngIf="password?.errors?.['minlength']"
+                  >
+                    password must be at least 3 characters
+                  </small>
+                  <small
+                    class="text-danger"
+                    *ngIf="password?.errors?.['maxlength']"
+                  >
+                    password must not exceed 20 characters
+                  </small>
+                </div>
+              </div>
+              <div class="form-group" *ngIf="hasTwoFactorAuth">
+                <label>Two-Factor</label>
+                <input
+                  [class.is-invalid]="
+                    twofactorLoginToken?.invalid && twofactorLoginToken?.touched
+                  "
+                  [class.is-valid]="
+                    twofactorLoginToken?.valid && twofactorLoginToken?.touched
+                  "
+                  type="text"
+                  class="form-control"
+                  formControlName="twofactorLoginToken"
+                />
+                <div
+                  *ngIf="
+                    twofactorLoginToken?.invalid && twofactorLoginToken?.touched
+                  "
+                >
+                  <small
+                    class="text-danger"
+                    *ngIf="twofactorLoginToken?.errors?.['required']"
+                  >
+                    two-factor is required
+                  </small>
+                  <small
+                    class="text-danger"
+                    *ngIf="twofactorLoginToken?.errors?.['minlength'] || twofactorLoginToken?.errors?.['maxlength']"
+                  >
+                    two-factor must be 6 characters
+                  </small>
+                </div>
+              </div>
+              <div class="text-center">
+                <button
+                  *ngIf="!loader"
+                  type="submit"
+                  [disabled]="
+                    username.invalid ||
+                    password.invalid ||
+                    (hasTwoFactorAuth ? twofactorLoginToken.invalid : false)
+                  "
+                  class="btn bg-gradient-info w-100 mt-4 mb-0"
+                >
+                  Sign in
+                </button>
+                <button
+                  *ngIf="loader"
+                  type="submit"
+                  class="btn bg-gradient-info w-100 mt-4 mb-0"
+                  disabled
+                >
+                  <span
+                    class="spinner-border spinner-border-sm"
+                    role="status"
+                    aria-hidden="true"
+                  ></span>
+                </button>
+              </div>
+            </form>
+          </div>
+          <div class="card-footer text-center pt-0 px-lg-2 px-1">
+            <p class="mb-4 text-sm mx-auto">
+              Don't have an account?
+              <a
+                routerLink="/sign-up"
+                class="text-info text-gradient font-weight-bold"
+                >Sign up</a
+              >
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div
+          class="oblique position-absolute top-0 h-100 d-md-block d-none me-n8"
+        >
+          <img src="{{ bgImgUrl }}" />
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

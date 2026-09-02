@@ -1,0 +1,39 @@
+<div class="container-fluid position-sticky z-index-sticky top-0 m-0 p-0">
+  <nav class="navbar navbar-expand-lg bg-white">
+    <div class="container-fluid">
+      <a
+        class="navbar-brand font-weight-bold fs-5"
+        style="cursor: pointer"
+        (click)="getNavigate()"
+        >Gotcha</a
+      >
+      <div *ngIf="authService.isLoggedIn()" class="d-flex">
+        <a
+          style="cursor: pointer"
+          class="nav-link me-2"
+          routerLink="/profile"
+          *ngIf="isRouteActive('profile')"
+        >
+          <i class="fa fa-user opacity-6 me-1"></i>
+          Profile
+        </a>
+
+        <a
+          style="cursor: pointer"
+          class="nav-link me-2"
+          routerLink="/view-cpy"
+          *ngIf="isRouteActive('view-cpy')"
+        >
+          <i class="fa fa-chart-pie opacity-6 me-1"></i>
+          Dashboard
+        </a>
+
+        <a style="cursor: pointer" class="nav-link me-2" (click)="getLogOut()">
+          <i class="fa-solid fa-power-off"></i>
+          Log out
+        </a>
+      </div>
+      <!-- <div *ngIf="!isLogIn" class="d-flex"></div> -->
+    </div>
+  </nav>
+</div>

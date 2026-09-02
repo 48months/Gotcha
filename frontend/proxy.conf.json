@@ -1,0 +1,17 @@
+{
+  "/public/*": {
+    "target": "http://172.16.0.42:27017",
+    "secure": false,
+    "changeOrigin": true
+  },
+  "/protected/*": {
+    "target": "http://172.16.0.42:27017",
+    "secure": false,
+    "changeOrigin": true
+  },
+  "/admin/*": {
+    "target": "http://172.16.0.42:27017",
+    "secure": false,
+    "changeOrigin": true
+  }
+}

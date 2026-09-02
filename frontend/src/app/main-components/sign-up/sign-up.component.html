@@ -1,0 +1,178 @@
+<body class="">
+  <main class="main-content mt-0">
+    <div *ngIf="!signUpFormSubmitted" class="hidden">
+      <section class="min-vh-100 mb-8">
+        <div
+          class="page-header align-items-start min-vh-50 pt-5 pb-11 m-3 border-radius-lg"
+          style="background-image: url('../../../assets/img/curved14.jpg')"
+        >
+          <span class="mask bg-gradient-dark opacity-6"></span>
+          <div class="container">
+            <div class="row justify-content-center">
+              <div class="col-lg-5 text-center mx-auto">
+                <h1 class="text-white mb-2 mt-5">Welcome!</h1>
+                <p class="text-lead text-white">Create a new account</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="container">
+          <div class="row mt-lg-n10 mt-md-n11 mt-n10">
+            <div class="col-xl-4 col-lg-5 col-md-7 mx-auto">
+              <div class="card z-index-0">
+                <div class="card-header text-center pt-4">
+                  <h5>Register</h5>
+                </div>
+                <div class="card-body">
+                  <form [formGroup]="signupForm" role="form text-left">
+                    <div class="mb-3">
+                      <input
+                        type="text"
+                        class="form-control"
+                        [ngClass]="{
+                          'is-invalid':
+                            !signupForm.get('name').valid &&
+                            signupForm.get('name').touched
+                        }"
+                        formControlName="name"
+                        placeholder="Name"
+                        aria-label="name"
+                        aria-describedby="email-addon"
+                      />
+                    </div>
+                    <div class="mb-3">
+                      <input
+                        type="email"
+                        formControlName="username"
+                        [ngClass]="{
+                          'is-invalid':
+                            !signupForm.get('username').valid &&
+                            signupForm.get('username').touched
+                        }"
+                        class="form-control"
+                        name="email"
+                        placeholder="Email"
+                        aria-label="Email"
+                        aria-describedby="email-addon"
+                      />
+                    </div>
+                    <div class="mb-3">
+                      <input
+                        type="password"
+                        formControlName="password"
+                        [ngClass]="{
+                          'is-invalid':
+                            !signupForm.get('password').valid &&
+                            signupForm.get('password').touched
+                        }"
+                        class="form-control"
+                        name="password"
+                        placeholder="Password"
+                        aria-label="Password"
+                        aria-describedby="password-addon"
+                      />
+                    </div>
+                    <div class="mb-3">
+                      <input
+                        type="EmpId"
+                        formControlName="empId"
+                        class="form-control"
+                        [ngClass]="{
+                          'is-invalid':
+                            !signupForm.get('empId').valid &&
+                            signupForm.get('empId').touched
+                        }"
+                        name="EmpId"
+                        placeholder="Employee Id"
+                        aria-label="Employee Id"
+                        aria-describedby="EmployeeId-addon"
+                      />
+                    </div>
+                    <!-- <div class="form-check">
+                      <input class="form-check-input" type="checkbox" formControlName="twofactorEnabled"
+                        name="twofactorEnabled" />
+                      <label class="form-check-label" for="flexCheckDefault">
+                        Enable two factor authentication
+                      </label>
+                    </div> -->
+                    <div class="form-check form-check-info text-left">
+                      <input
+                        class="form-check-input"
+                        type="checkbox"
+                        name="terms"
+                        id="flexCheckDefault"
+                        checked
+                      />
+                      <label class="form-check-label" for="flexCheckDefault">
+                        I agree the
+                        <a routerLink="" class="text-dark font-weight-bolder"
+                          >Terms and Conditions</a
+                        >
+                      </label>
+                    </div>
+                    <div class="text-center">
+                      <span class="text-danger ml-auto badge-light">{{
+                        error
+                      }}</span>
+                      <button
+                        *ngIf="!loader"
+                        type="button"
+                        class="btn bg-gradient-dark w-100 my-4 mb-2"
+                        [disabled]="!signupForm.valid"
+                        (click)="onSignup()"
+                      >
+                        Sign up
+                      </button>
+                      <button
+                        *ngIf="loader"
+                        type="submit"
+                        class="btn bg-gradient-dark w-100 my-4 mb-2"
+                        disabled
+                      >
+                        <span
+                          class="spinner-border spinner-border-sm"
+                          role="status"
+                          aria-hidden="true"
+                        ></span>
+                      </button>
+                    </div>
+                    <p class="text-sm mt-3 mb-0">
+                      Already have an account?
+                      <a
+                        routerLink="/log-in"
+                        class="text-dark font-weight-bolder"
+                        >Sign in</a
+                      >
+                    </p>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <div *ngIf="signUpFormSubmitted">
+    <div class="container mt-7">
+      <div class="row">
+        <div class="col-xs-12">
+          <h6 class="text-center">
+            Your account has been created successfully, Please contact your
+            Admin.
+          </h6>
+        </div>
+      </div>
+    </div>
+    <div class="col d-flex justify-content-center">
+      <div class="container" style="width: 25rem">
+        <img class="card-img-top" [src]="qrcode" alt="QR code" />
+        <div class="card-body">
+          <h6 class="card-title">Please scan the qrcode with authenticator</h6>
+          <a class="btn bg-gradient-dark w-100 my-4 mb-2" routerLink="">Home</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>

@@ -1,0 +1,390 @@
+<div class="container-fluid">
+  <div class="page-header min-height-250 border-radius-xl mt-4">
+    <span class="mask bg-gradient-primary opacity-6"></span>
+  </div>
+  <div class="card card-body blur shadow-blur mx-4 mt-n6 overflow-hidden">
+    <div class="row gx-4">
+      <div class="col-auto">
+        <div class="avatar avatar-xl position-relative">
+          <ngx-avatars name="{{ userInfo.name }}"></ngx-avatars>
+        </div>
+      </div>
+      <div class="col-auto my-auto">
+        <div class="h-100">
+          <h5 class="mb-1">
+            {{ userInfo.name | uppercase }}
+          </h5>
+          <p class="mb-0 font-weight-bold text-sm">
+            THBS / {{ userInfo.role }}
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="container-fluid py-4">
+  <div class="row g-2">
+    <div class="col-12 col-md-4">
+      <div class="card shadow">
+        <div class="card-body">
+          <div class="card-title">
+            <h3>Profile Information</h3>
+          </div>
+          <ul class="list-group">
+            <li class="list-group-item border-0 ps-0 pt-0 text-sm">
+              <strong title="name" class="text-dark">Full Name:</strong> &nbsp;
+              {{ userInfo.name | titlecase }}
+            </li>
+            <li class="list-group-item border-0 ps-0 text-sm">
+              <strong class="text-dark">Mobile:</strong> &nbsp; (+91) 999 999
+              9999
+            </li>
+            <li class="list-group-item border-0 ps-0 text-sm">
+              <strong class="text-dark">Email:</strong> &nbsp;
+              {{ userInfo.username }}
+            </li>
+            <li class="list-group-item border-0 ps-0 text-sm">
+              <strong class="text-dark">Location:</strong> &nbsp; Bangalore
+            </li>
+          </ul>
+          <button class="btn btn-primary mt-3 mb-0" data-bs-toggle="tooltip" data-bs-placement="top"
+            title="Reset Password" (click)="openResetPasswordModal(content)">
+            Reset Password
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-md-8" *ngIf="isAdmin">
+      <div class="card shadow">
+        <div class="card-body">
+          <div class="d-flex justify-content-between px-2">
+            <div class="card-title">
+              <h3>Manage Users</h3>
+            </div>
+          </div>
+          <div class="table-responsive p-0">
+            <table class="table align-items-center mb-0">
+              <thead>
+                <tr>
+                  <th class="text-start text-uppercase text-primary text-xxs ps-6">
+                    User
+                  </th>
+                  <th class="text-start text-uppercase text-primary text-xxs ps-2">
+                    Active
+                  </th>
+                  <th class="text-start text-uppercase text-primary text-xxs ps-2">
+                    Admin
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="
+                    let item of users
+                      | paginate
+                        : {
+                            itemsPerPage: tableSize,
+                            currentPage: page,
+                            totalItems: count
+                          };
+                    let i = index
+                  ">
+                  <td>
+                    <div class="d-flex">
+                      <ngx-avatars class="mx-1" name="{{ item.name }}"></ngx-avatars>
+                      <div class="d-flex flex-column justify-content-center">
+                        <h6 class="mb-0 text-sm">
+                          {{ item.name | titlecase }}
+                        </h6>
+                        <p class="text-xs text-secondary mb-0">
+                          {{ item.username }}
+                        </p>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="form-check form-switch pe-3 ps-0 mb-0 ms-auto">
+                      <input class="form-check-input ms-auto" type="checkbox" (click)="activateUserAccount(item.name)"
+                        [checked]="item.active" />
+                      <br />
+                      <label *ngIf="item.active == true"
+                        class="form-check-label text-body pe-3 ps-0 mb-0 ms-auto">Disable</label>
+                      <label *ngIf="item.active == false"
+                        class="form-check-label text-body pe-3 ps-0 mb-0 ms-auto">Enable</label>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="form-check form-switch pe-3 ps-0 mb-0 ms-auto">
+                      <input class="form-check-input ms-auto" type="checkbox" (click)="changeRole(item.name)"
+                        [checked]="item.role == 'ADMIN'" />
+                      <br />
+                      <label *ngIf="item.role == 'ADMIN'"
+                        class="form-check-label text-body pe-3 ps-0 mb-0 ms-auto">Disable</label>
+                      <label *ngIf="item.role == 'USER'"
+                        class="form-check-label text-body pe-3 ps-0 mb-0 ms-auto">Enable</label>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="container-fluid">
+            <pagination-controls class="d-flex justify-content-center" previousLabel="Prev" nextLabel="Next"
+              (pageChange)="onTableDataChange($event)"></pagination-controls>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-md-12" *ngIf="isAdmin">
+      <div class="card shadow">
+        <div class="card-body">
+          <div class="card-title d-flex justify-content-between px-1">
+            <h3>Projects Details</h3>
+            <div>
+              <button class="btn btn-primary mx-2" (click)="openFileUploadModal(fileUpload)" [disabled]="false">
+                Upload File
+              </button>
+              <button class="btn btn-primary mx-2" (click)="openAddProjectDetailsModal(projectDetails)">
+                Add
+              </button>
+            </div>
+          </div>
+          <div class="row g-3">
+            <div class="col-12 col-md-4 flex-wrap" *ngFor="let name of projectNameList; let nameIndex = index">
+              <div class="card shadow">
+                <div class="card-body">
+                  <div class="d-flex justify-content-between">
+                    <div class="card-title my-1 text-start">
+                      <p class="text-primary text-bold m-0" style="font-size: xx-small">
+                        Project Name
+                      </p>
+                      <h3 class="m-0">{{ name | uppercase }}</h3>
+                    </div>
+                    <div class="card-title my-1 px-2 text-start">
+                      <p class="text-primary text-bold m-0" style="font-size: xx-small">
+                        Year
+                      </p>
+                      <select class="borders outline" style="font-size: xx-large"
+                        (change)="changeYear($event, nameIndex)">
+                        <option *ngFor="
+                            let year of projectYearList[nameIndex];
+                            let yearIndex = index
+                          " [value]="yearIndex" [selected]="projectYear[nameIndex]" [disabled]="editable">
+                          {{ year }}
+                        </option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="d-flex flex-column flex-wrap align-item-start me-auto">
+                    <div class="d-flex justify-content-between my-auto me-2">
+                      <h6 class="card-subtitle text-primary text-start">
+                        Components
+                      </h6>
+                      <button class="btn py-1 px-2 my-auto" title="Add Component" style="box-shadow: none"
+                        (click)="addComp(nameIndex)" [disabled]="editable">
+                        <i class="fa-solid fa-circle-plus" style="font-size: large; color: green"></i>
+                      </button>
+                    </div>
+                    <ul class="d-flex flex-column p-0">
+                      <li class="d-flex justify-content-between my-1" *ngFor="
+                          let comp of componentIdList[nameIndex][projectYear[nameIndex]];
+                          let compIndex = index
+                        " [id]="nameIndex+'-'+compIndex">
+                        <input type="text" [value]="comp" class="borders outline"
+                          (change)="onChange($event, nameIndex, compIndex)" [style]="
+                            editable &&
+                            nameIndex === projectName &&
+                            compIndex === componentId
+                              ? 'border-bottom-style: dashed'
+                              : null
+                          " [disabled]="
+                            !(
+                              editable &&
+                              nameIndex === projectName &&
+                              compIndex === componentId
+                            )
+                          " />
+                        <button class="btn py-1 px-2 my-auto" title="Edit Component" style="box-shadow: none" *ngIf="
+                            !(
+                              editable &&
+                              nameIndex === projectName &&
+                              compIndex === componentId
+                            )
+                          " [disabled]="editable" (click)="editComp(nameIndex, compIndex)">
+                          <i class="fa-regular fa-pen-to-square" style="font-size: large; color: #cb0c9f"></i>
+                        </button>
+                        <button class="btn py-1 px-2 my-auto" title="Set Component" style="box-shadow: none" *ngIf="
+                            editable &&
+                            nameIndex === projectName &&
+                            compIndex === componentId
+                          " (click)="onSubmit()">
+                          <i class="fa-solid fa-check" style="font-size: large; color: green"></i>
+                        </button>
+                        <button class="btn py-1 px-2 my-auto" title="Delete Component" style="box-shadow: none" (click)="
+                            openDeleteConfirmModal(
+                              deleteConfirm,
+                              nameIndex,
+                              compIndex
+                            )
+                          " [disabled]="
+                            editable &&
+                            (projectName !== nameIndex ||
+                              componentId !== compIndex)
+                          ">
+                          <i class="fa-regular fa-trash-can" style="font-size: large; color: red"></i>
+                        </button>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <ng-template #content let-modal>
+    <div class="modal-header">
+      <h4 class="modal-title" id="modal-basic-title">Update Password</h4>
+      <button type="button" class="btn my-0 mover" aria-label="Close" (click)="modal.dismiss('Cross click')"
+        style="box-shadow: none">
+        <i class="fa-solid fa-xmark" style="font-size: large"></i>
+      </button>
+    </div>
+    <form class="modal-body p-2" [formGroup]="resetForm">
+      <div class="m-4">
+        <label for="password">Password</label>
+        <input type="password" class="form-control" name="password" [ngClass]="{
+            'is-invalid':
+              !resetForm.get('password').valid &&
+              resetForm.get('password').touched
+          }" formControlName="password" placeholder="Password" />
+      </div>
+      <div class="m-4">
+        <label for="confirmPassword">Confirm Password</label>
+        <input type="password" class="form-control" name="confirmPassword" [ngClass]="{
+            'is-invalid':
+              !resetForm.get('confirmPassword').valid &&
+              resetForm.get('confirmPassword').touched
+          }" formControlName="confirmPassword" placeholder="Confirm Password" />
+        <small class="text-danger" *ngIf="
+            resetForm.get('password').value !==
+              resetForm.get('confirmPassword').value &&
+            resetForm.get('password').touched &&
+            resetForm.get('confirmPassword').touched
+          ">
+          Password do not match
+        </small>
+      </div>
+      <div class="my-4 mx-2">
+        <div class="d-flex justify-content-center">
+          <button class="btn btn-primary" [disabled]="
+              resetForm.get('password').invalid ||
+              resetForm.get('confirmPassword').invalid ||
+              resetForm.get('password').value !==
+                resetForm.get('confirmPassword').value
+            " (click)="submitResetPassword()">
+            Submit Password
+          </button>
+        </div>
+      </div>
+    </form>
+  </ng-template>
+  <ng-template #projectDetails let-modal>
+    <div class="modal-header">
+      <h4 class="modal-title" id="modal-basic-title">Project Details</h4>
+      <button type="button" class="btn my-0 mover" aria-label="Close" (click)="modal.dismiss('Cross click')"
+        style="box-shadow: none">
+        <i class="fa-solid fa-xmark" style="font-size: large"></i>
+      </button>
+    </div>
+    <form [formGroup]="projectDetailsForm" class="modal-body p-2">
+      <div class="m-3">
+        <label>Project Name</label>
+        <input type="text" class="form-control" formControlName="projectName" placeholder="Project Name" />
+      </div>
+      <div class="m-3">
+        <label>Year</label>
+        <input type="text" class="form-control" formControlName="year" placeholder="Year" />
+      </div>
+      <div class="m-3">
+        <div class="d-flex justify-content-between">
+          <label>Component Id <small>(add one)</small></label>
+        </div>
+        <input type="text" class="form-control" formControlName="componentId" placeholder="component Id" />
+      </div>
+      <div class="m-3">
+        <button type="button" class="btn btn-primary" style="width: auto" (click)="submitProjectDetails()">
+          Submit
+        </button>
+      </div>
+    </form>
+  </ng-template>
+  <ng-template #fileUpload let-modal>
+    <div class="modal-header">
+      <h4 class="modal-title" id="modal-basic-title">File Upload</h4>
+      <button type="button" class="btn my-0 mover" aria-label="Close" (click)="modal.dismiss('Cross click')"
+        style="box-shadow: none">
+        <i class="fa-solid fa-xmark" style="font-size: large"></i>
+      </button>
+    </div>
+    <div class="modal-body p-4">
+      <!-- <div>
+        <label>Month</label>
+        <select class="form-select" (change)="selectedMonth = $event['target']['value'].toLowerCase()">
+          <option *ngFor="let mon of months" [ngValue]="mon" [disabled]="editable">
+            {{ mon }}
+          </option>
+        </select>
+      </div>
+      <div>
+        <label>Year</label>
+        <select class="form-select" (change)="selectedYear = $event['target']['value']">
+          <option *ngFor="let year of years" [ngValue]="year" [disabled]="editable">
+            {{ year }}
+          </option>
+        </select>
+      </div> -->
+      <div class="mb-2">
+        <label for="formFile" class="form-label">Choose File <small>(accepts only xlsx)</small></label>
+        <input type="file" name="file" class="form-control" ng2FileSelect [uploader]="uploader" accept=".xlsx" />
+        <small>Name format : CPY_Template_Mar'23.xlsx</small>
+      </div>
+      <button *ngIf="!uploading; else elseButton" type="button" class="btn btn-primary" (click)="upload()"
+        [disabled]="!uploader.getNotUploadedItems().length">
+        Upload
+      </button>
+      <ng-template #elseButton>
+        <button type="submit" class="btn btn-primary" disabled>
+          <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+        </button>
+      </ng-template>
+    </div>
+  </ng-template>
+  <ng-template #deleteConfirm let-modal>
+    <div class="modal-header">
+      <h4 class="modal-title" id="modal-basic-title">Delete Component</h4>
+      <button type="button" class="btn my-0 mover" aria-label="Close" (click)="modal.dismiss('Cross click')"
+        style="box-shadow: none">
+        <i class="fa-solid fa-xmark" style="font-size: large"></i>
+      </button>
+    </div>
+    <div class="modal-body p-2">
+      <div class="d-flex justify-content-between p-2">
+        <div class="my-auto">Do you want to delete?</div>
+        <button class="btn btn-white" (click)="modal.dismiss('Cross click')">
+          cancel
+        </button>
+        <button *ngIf="!deleting; else delButton" class="btn btn-danger" (click)="deleteComp()">
+          delete
+        </button>
+        <ng-template #delButton>
+          <button type="submit" class="btn btn-danger" disabled>
+            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+          </button>
+        </ng-template>
+      </div>
+    </div>
+  </ng-template>
+</div>
