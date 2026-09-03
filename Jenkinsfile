@@ -60,7 +60,7 @@ stage('Verify Angular Build') {
             '''
         }
     }
-}}
+}
 
         stage('Build Backend Docker Image') {
             steps {
