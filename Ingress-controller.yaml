@@ -1,11 +1,12 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: gotcha-ingress
+  name: gotcha
+  namespace: gotcha
 spec:
   ingressClassName: nginx
   rules:
-  - host: gotcha.example.com
+  - host: gotcha.yourdomain.com
     http:
       paths:
       - path: /
