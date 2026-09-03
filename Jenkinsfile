@@ -160,6 +160,10 @@ pipeline {
                     echo "=== Verify Cluster Access ==="
                     kubectl get nodes
 
+                    echo "=== Ensure Namespace Exists ==="
+                    kubectl get namespace gotcha >/dev/null 2>&1 || \
+                    kubectl create namespace gotcha
+
                     echo "=== Verify Namespace ==="
                     kubectl get ns gotcha
 
