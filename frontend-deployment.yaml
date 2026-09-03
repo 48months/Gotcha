@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: gotcha-frontend
+  namespace: gotcha
 spec:
   replicas: 2
   selector:
@@ -14,15 +15,17 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: yourdockerhub/gotcha-frontend:v1
+        image: 558050136406.dkr.ecr.eu-west-1.amazonaws.com/thbs-gotcha-frontend:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 80
+
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: gotcha-frontend-svc
+  namespace: gotcha
 spec:
   selector:
     app: gotcha-frontend
@@ -30,3 +33,4 @@ spec:
   - port: 80
     targetPort: 80
   type: ClusterIP
+``
