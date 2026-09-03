@@ -17,16 +17,6 @@ pipeline {
     }
 
     stages {
-
-        stage('Checkout') {
-            steps {
-                git(
-                    branch: 'main',
-                    url: 'git@github.com:48months/Gotcha.git'
-                )
-            }
-        }
-
         stage('Login to ECR') {
             steps {
                 sh '''
