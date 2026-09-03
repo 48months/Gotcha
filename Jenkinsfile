@@ -40,16 +40,27 @@ pipeline {
             }
         }
 
-        stage('Build Frontend Application') {
-            steps {
-                dir('frontend') {
-                    sh '''
-                    npm ci
-                    npm run build
-                    '''
-                }
-            }
+        stage('Build Angular') {
+    steps {
+        dir('frontend') {
+            sh '''
+            npm ci
+            npx ng build --configuration production
+            '''
         }
+    }
+}
+
+stage('Verify Angular Build') {
+    steps {
+        dir('frontend') {
+            sh '''
+            echo "Build output:"
+            find dist
+            '''
+        }
+    }
+}}
 
         stage('Build Backend Docker Image') {
             steps {
