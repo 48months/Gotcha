@@ -61,26 +61,28 @@ pipeline {
         }
 
         stage('Build Backend Docker Image') {
-            steps {
-                sh '''
-                docker build \
-                -t ${BACKEND_IMAGE}:${IMAGE_TAG} \
-                -f backend/Dockerfile \
-                backend
-                '''
-            }
-        }
+    steps {
+        sh '''
+        docker build \
+        -t ${BACKEND_IMAGE}:${IMAGE_TAG} \
+        -t ${BACKEND_IMAGE}:latest \
+        -f backend/Dockerfile \
+        backend
+        '''
+    }
+}
 
         stage('Build Frontend Docker Image') {
-            steps {
-                sh '''
-                docker build \
-                -t ${FRONTEND_IMAGE}:${IMAGE_TAG} \
-                -f frontend/Dockerfile \
-                frontend
-                '''
-            }
-        }
+    steps {
+        sh '''
+        docker build \
+        -t ${FRONTEND_IMAGE}:${IMAGE_TAG} \
+        -t ${FRONTEND_IMAGE}:latest \
+        -f frontend/Dockerfile \
+        frontend
+        '''
+    }
+}
 
         stage('Verify Images') {
             steps {
@@ -92,36 +94,46 @@ pipeline {
         }
 
         stage('Push Backend Image') {
-            steps {
-                withAWS(
-                    credentials: "${AWS_CREDENTIAL}",
-                    region: "${AWS_REGION}"
-                ) {
-                    sh '''
-                    podman push \
-                    --remove-signatures \
-                    --format docker \
-                    ${BACKEND_IMAGE}:${IMAGE_TAG}
-                    '''
-                }
-            }
+    steps {
+        withAWS(
+            credentials: "${AWS_CREDENTIAL}",
+            region: "${AWS_REGION}"
+        ) {
+            sh '''
+            podman push \
+            --remove-signatures \
+            --format docker \
+            ${BACKEND_IMAGE}:${IMAGE_TAG}
+
+            podman push \
+            --remove-signatures \
+            --format docker \
+            ${BACKEND_IMAGE}:latest
+            '''
         }
+    }
+}
 
         stage('Push Frontend Image') {
-            steps {
-                withAWS(
-                    credentials: "${AWS_CREDENTIAL}",
-                    region: "${AWS_REGION}"
-                ) {
-                    sh '''
-                    podman push \
-                    --remove-signatures \
-                    --format docker \
-                    ${FRONTEND_IMAGE}:${IMAGE_TAG}
-                    '''
-                }
-            }
+    steps {
+        withAWS(
+            credentials: "${AWS_CREDENTIAL}",
+            region: "${AWS_REGION}"
+        ) {
+            sh '''
+            podman push \
+            --remove-signatures \
+            --format docker \
+            ${FRONTEND_IMAGE}:${IMAGE_TAG}
+
+            podman push \
+            --remove-signatures \
+            --format docker \
+            ${FRONTEND_IMAGE}:latest
+            '''
         }
+    }
+}
 
         stage('Deploy To EKS') {
             steps {
