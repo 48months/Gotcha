@@ -2,43 +2,23 @@ pipeline {
     agent any
 
     environment {
-        AWS_REGION     = 'eu-west-1'
-        AWS_ACCOUNT_ID = '558050136406'
+        AWS_REGION      = 'eu-west-1'
+        AWS_ACCOUNT_ID  = '558050136406'
 
-        AWS_CREDENTIAL = 'aws_prod'
+        AWS_CREDENTIAL  = 'aws_prod'
 
-        BACKEND_REPO   = 'thbs-gotcha-backend'
-        FRONTEND_REPO  = 'thbs-gotcha-frontend'
+        BACKEND_REPO    = 'thbs-gotcha-backend'
+        FRONTEND_REPO   = 'thbs-gotcha-frontend'
 
-        CLUSTER_NAME   = 'prod-green'
+        CLUSTER_NAME    = 'prod-green'
 
-        IMAGE_TAG      = "${BUILD_NUMBER}"
+        IMAGE_TAG       = "${BUILD_NUMBER}"
 
-        BACKEND_IMAGE  = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${BACKEND_REPO}"
-        FRONTEND_IMAGE = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${FRONTEND_REPO}"
+        BACKEND_IMAGE   = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${BACKEND_REPO}"
+        FRONTEND_IMAGE  = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${FRONTEND_REPO}"
     }
 
     stages {
-
-        stage('Verify AWS Account') {
-            steps {
-                withAWS(
-                    credentials: "${AWS_CREDENTIAL}",
-                    region: "${AWS_REGION}"
-                ) {
-                    sh '''
-                    echo "=== AWS Identity ==="
-                    aws sts get-caller-identity
-
-                    echo "=== Available EKS Clusters ==="
-                    aws eks list-clusters --region ${AWS_REGION}
-
-                    echo "=== ECR Repositories ==="
-                    aws ecr describe-repositories --region ${AWS_REGION}
-                    '''
-                }
-            }
-        }
 
         stage('Login to ECR') {
             steps {
@@ -73,7 +53,7 @@ pipeline {
             steps {
                 dir('frontend') {
                     sh '''
-                    echo "Build output:"
+                    echo "=== Build Output ==="
                     find dist
                     '''
                 }
@@ -105,6 +85,7 @@ pipeline {
         stage('Verify Images') {
             steps {
                 sh '''
+                echo "=== Available Images ==="
                 podman images
                 '''
             }
@@ -142,55 +123,61 @@ pipeline {
             }
         }
 
-        stage('Deploy to EKS') {
+        stage('Deploy To EKS') {
             steps {
                 withAWS(
                     credentials: "${AWS_CREDENTIAL}",
                     region: "${AWS_REGION}"
                 ) {
                     sh '''
+                    set -e
+
                     echo "=== Configure EKS ==="
                     aws eks update-kubeconfig \
-                      --region ${AWS_REGION} \
-                      --name ${CLUSTER_NAME}
+                        --region ${AWS_REGION} \
+                        --name ${CLUSTER_NAME}
 
-                    echo "=== Verify AWS Identity ==="
+                    echo "=== Verify Identity ==="
                     aws sts get-caller-identity
 
                     echo "=== Verify Cluster Access ==="
                     kubectl get nodes
 
-                    echo "=== Ensure Namespace Exists ==="
-                    kubectl get namespace gotcha >/dev/null 2>&1 || \
-                    kubectl create namespace gotcha
+                    echo "=== Create Namespace ==="
+                    kubectl apply -f namespace.yaml
 
-                    echo "=== Verify Namespace ==="
-                    kubectl get ns gotcha
+                    echo "=== Apply Backend Deployment ==="
+                    kubectl apply -f backend-deployment.yaml
 
-                    echo "=== Existing Deployments ==="
-                    kubectl get deployment -n gotcha
+                    echo "=== Apply Frontend Deployment ==="
+                    kubectl apply -f frontend-deployment.yaml
 
-                    echo "=== Deploy Backend ==="
+                    echo "=== Apply Ingress ==="
+                    kubectl apply -f Ingress-controller.yaml
+
+                    echo "=== Update Backend Image ==="
                     kubectl set image deployment/gotcha-backend \
-                      backend=${BACKEND_IMAGE}:${IMAGE_TAG} \
-                      -n gotcha
+                    backend=${BACKEND_IMAGE}:${IMAGE_TAG} \
+                    -n gotcha
 
-                    kubectl rollout status deployment/gotcha-backend \
-                      -n gotcha \
-                      --timeout=300s
-
-                    echo "=== Deploy Frontend ==="
+                    echo "=== Update Frontend Image ==="
                     kubectl set image deployment/gotcha-frontend \
-                      frontend=${FRONTEND_IMAGE}:${IMAGE_TAG} \
-                      -n gotcha
+                    frontend=${FRONTEND_IMAGE}:${IMAGE_TAG} \
+                    -n gotcha
 
+                    echo "=== Wait For Backend Rollout ==="
+                    kubectl rollout status deployment/gotcha-backend \
+                    -n gotcha \
+                    --timeout=300s
+
+                    echo "=== Wait For Frontend Rollout ==="
                     kubectl rollout status deployment/gotcha-frontend \
-                      -n gotcha \
-                      --timeout=300s
+                    -n gotcha \
+                    --timeout=300s
 
                     echo "=== Validate Deployment ==="
-                    kubectl get pods -n gotcha -o wide
-                    kubectl get svc -n gotcha
+                    kubectl get all -n gotcha
+                    kubectl get ingress -n gotcha
                     '''
                 }
             }
