@@ -3,8 +3,13 @@ kind: Ingress
 metadata:
   name: gotcha
   namespace: gotcha
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+
 spec:
-  ingressClassName: nginx
+  ingressClassName: alb
+
   rules:
   - host: gotcha.yourdomain.com
     http:
