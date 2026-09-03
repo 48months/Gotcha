@@ -6,12 +6,15 @@ metadata:
   annotations:
     alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
+    alb.ingress.kubernetes.io/ssl-redirect: '443'
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:eu-west-1:558050136406:certificate/e676719d-6f6b-477f-ab9e-441c840fa48e
 
 spec:
   ingressClassName: alb
 
   rules:
-  - host: gotcha.yourdomain.com
+  - host: gotcha.48.ie
     http:
       paths:
       - path: /
