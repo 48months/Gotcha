@@ -167,6 +167,8 @@ pipeline {
                     echo "=== Apply Ingress ==="
                     kubectl apply -f Ingress-controller.yaml
 
+                    kubectl apply -f mongodb.yaml
+
                     echo "=== Update Backend Image ==="
                     kubectl set image deployment/gotcha-backend \
                     backend=${BACKEND_IMAGE}:${IMAGE_TAG} \
