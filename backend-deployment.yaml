@@ -20,6 +20,47 @@ spec:
         env:
         - name: LOG_FILENAME
           value: "/apps/logs/gotcha.log"
+        - name: APP_NAME
+          valueFrom:
+            secretKeyRef:
+              name: gotcha-backend-secret
+              key: APP_NAME
+
+        - name: JWT_EXPIRY_TIME
+          valueFrom:
+            secretKeyRef:
+              name: gotcha-backend-secret
+              key: JWT_EXPIRY_TIME
+
+        - name: JWT_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: gotcha-backend-secret
+              key: JWT_SECRET_KEY
+
+        - name: LOG_FILENAME
+          valueFrom:
+            secretKeyRef:
+              name: gotcha-backend-secret
+              key: LOG_FILENAME
+
+        - name: LOG_LEVEL
+          valueFrom:
+            secretKeyRef:
+              name: gotcha-backend-secret
+              key: LOG_LEVEL
+
+        - name: MONGODB_URL
+          valueFrom:
+            secretKeyRef:
+              name: gotcha-backend-secret
+              key: MONGODB_URL
+
+        - name: PORT
+          valueFrom:
+            secretKeyRef:
+              name: gotcha-backend-secret
+              key: PORT  
         ports:
         - containerPort: 8080
 
