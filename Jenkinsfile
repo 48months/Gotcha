@@ -2,7 +2,6 @@ pipeline {
     agent any
 
     environment {
-
         AWS_REGION     = 'eu-west-1'
         AWS_ACCOUNT_ID = '558050136406'
 
@@ -11,7 +10,7 @@ pipeline {
 
         CLUSTER_NAME   = 'prod-green'
 
-        BUILD_TAG      = "${BUILD_NUMBER}"
+        IMAGE_TAG      = "${BUILD_NUMBER}"
 
         BACKEND_IMAGE  = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${BACKEND_REPO}"
         FRONTEND_IMAGE = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${FRONTEND_REPO}"
@@ -21,12 +20,14 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                git branch: 'main',
-                url: 'git@github.com:48months/Gotcha.git'
+                git(
+                    branch: 'main',
+                    url: 'git@github.com:48months/Gotcha.git'
+                )
             }
         }
 
-        stage('Login ECR') {
+        stage('Login to ECR') {
             steps {
                 sh '''
                 aws ecr get-login-password \
@@ -39,22 +40,35 @@ pipeline {
             }
         }
 
-        stage('Build Backend') {
+        stage('Build Frontend Application') {
+            steps {
+                dir('frontend') {
+                    sh '''
+                    npm ci
+                    npm run build
+                    '''
+                }
+            }
+        }
+
+        stage('Build Backend Docker Image') {
             steps {
                 sh '''
                 docker build \
-                  -t ${BACKEND_IMAGE}:${BUILD_TAG} \
-                  -f backend/Dockerfile backend
+                  -t ${BACKEND_IMAGE}:${IMAGE_TAG} \
+                  -f backend/Dockerfile \
+                  backend
                 '''
             }
         }
 
-        stage('Build Frontend') {
+        stage('Build Frontend Docker Image') {
             steps {
                 sh '''
                 docker build \
-                  -t ${FRONTEND_IMAGE}:${BUILD_TAG} \
-                  -f frontend/Dockerfile frontend
+                  -t ${FRONTEND_IMAGE}:${IMAGE_TAG} \
+                  -f frontend/Dockerfile \
+                  frontend
                 '''
             }
         }
@@ -62,11 +76,11 @@ pipeline {
         stage('Push Images') {
             steps {
                 sh '''
-                docker push ${BACKEND_IMAGE}:${BUILD_TAG}
-                docker push ${FRONTEND_IMAGE}:${BUILD_TAG}
+                docker push ${BACKEND_IMAGE}:${IMAGE_TAG}
+                docker push ${FRONTEND_IMAGE}:${IMAGE_TAG}
 
-                docker tag ${BACKEND_IMAGE}:${BUILD_TAG} ${BACKEND_IMAGE}:latest
-                docker tag ${FRONTEND_IMAGE}:${BUILD_TAG} ${FRONTEND_IMAGE}:latest
+                docker tag ${BACKEND_IMAGE}:${IMAGE_TAG} ${BACKEND_IMAGE}:latest
+                docker tag ${FRONTEND_IMAGE}:${IMAGE_TAG} ${FRONTEND_IMAGE}:latest
 
                 docker push ${BACKEND_IMAGE}:latest
                 docker push ${FRONTEND_IMAGE}:latest
@@ -88,8 +102,8 @@ pipeline {
             steps {
                 sh '''
                 kubectl set image deployment/gotcha-backend \
-                backend=${BACKEND_IMAGE}:${BUILD_TAG} \
-                -n gotcha
+                  backend=${BACKEND_IMAGE}:${IMAGE_TAG} \
+                  -n gotcha
 
                 kubectl rollout status deployment/gotcha-backend -n gotcha
                 '''
@@ -100,28 +114,30 @@ pipeline {
             steps {
                 sh '''
                 kubectl set image deployment/gotcha-frontend \
-                frontend=${FRONTEND_IMAGE}:${BUILD_TAG} \
-                -n gotcha
+                  frontend=${FRONTEND_IMAGE}:${IMAGE_TAG} \
+                  -n gotcha
 
                 kubectl rollout status deployment/gotcha-frontend -n gotcha
                 '''
             }
         }
-
     }
 
     post {
 
         success {
-            echo "Deployment Completed Successfully"
+            echo 'Deployment Completed Successfully'
         }
 
         failure {
-            echo "Deployment Failed"
+            echo 'Deployment Failed'
         }
 
         always {
-            sh 'docker system prune -af || true'
+            sh '''
+            docker system prune -af || true
+            '''
+            cleanWs()
         }
     }
 }
