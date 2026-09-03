@@ -78,10 +78,10 @@ stage('Verify Angular Build') {
     steps {
         sh '''
         podman push --remove-signatures \
-        ${BACKEND_IMAGE}:${BUILD_TAG}
+        ${BACKEND_IMAGE}:${IMAGE_TAG}
 
         podman push --remove-signatures \
-        ${FRONTEND_IMAGE}:${BUILD_TAG}
+        ${FRONTEND_IMAGE}:${IMAGE_TAG}
         '''
     }
 }
