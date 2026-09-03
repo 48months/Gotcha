@@ -1,4 +1,4 @@
-FROM nginx:1.23-alpine
+FROM docker.io/library/nginx:1.23-alpine
 
 COPY dist/frontend/ /usr/share/nginx/html/frontend/
 
