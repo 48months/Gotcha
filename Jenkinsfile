@@ -75,19 +75,17 @@ stage('Verify Angular Build') {
         }
 
         stage('Push Images') {
-            steps {
-                sh '''
-                docker push ${BACKEND_IMAGE}:${IMAGE_TAG}
-                docker push ${FRONTEND_IMAGE}:${IMAGE_TAG}
+    steps {
+        sh '''
+        podman push --remove-signatures \
+        ${BACKEND_IMAGE}:${BUILD_TAG}
 
-                docker tag ${BACKEND_IMAGE}:${IMAGE_TAG} ${BACKEND_IMAGE}:latest
-                docker tag ${FRONTEND_IMAGE}:${IMAGE_TAG} ${FRONTEND_IMAGE}:latest
+        podman push --remove-signatures \
+        ${FRONTEND_IMAGE}:${BUILD_TAG}
+        '''
+    }
+}
 
-                docker push ${BACKEND_IMAGE}:latest
-                docker push ${FRONTEND_IMAGE}:latest
-                '''
-            }
-        }
 
         stage('Configure EKS') {
             steps {
