@@ -142,64 +142,53 @@ pipeline {
             }
         }
 
-        stage('Configure EKS') {
+        stage('Deploy to EKS') {
             steps {
                 withAWS(
                     credentials: "${AWS_CREDENTIAL}",
                     region: "${AWS_REGION}"
                 ) {
                     sh '''
+                    echo "=== Configure EKS ==="
                     aws eks update-kubeconfig \
-                    --region ${AWS_REGION} \
-                    --name ${CLUSTER_NAME}
+                      --region ${AWS_REGION} \
+                      --name ${CLUSTER_NAME}
 
+                    echo "=== Verify AWS Identity ==="
+                    aws sts get-caller-identity
+
+                    echo "=== Verify Cluster Access ==="
                     kubectl get nodes
+
+                    echo "=== Verify Namespace ==="
+                    kubectl get ns gotcha
+
+                    echo "=== Existing Deployments ==="
+                    kubectl get deployment -n gotcha
+
+                    echo "=== Deploy Backend ==="
+                    kubectl set image deployment/gotcha-backend \
+                      backend=${BACKEND_IMAGE}:${IMAGE_TAG} \
+                      -n gotcha
+
+                    kubectl rollout status deployment/gotcha-backend \
+                      -n gotcha \
+                      --timeout=300s
+
+                    echo "=== Deploy Frontend ==="
+                    kubectl set image deployment/gotcha-frontend \
+                      frontend=${FRONTEND_IMAGE}:${IMAGE_TAG} \
+                      -n gotcha
+
+                    kubectl rollout status deployment/gotcha-frontend \
+                      -n gotcha \
+                      --timeout=300s
+
+                    echo "=== Validate Deployment ==="
+                    kubectl get pods -n gotcha -o wide
+                    kubectl get svc -n gotcha
                     '''
                 }
-            }
-        }
-
-        stage('Verify Namespace & Deployments') {
-            steps {
-                sh '''
-                kubectl get ns gotcha || true
-                kubectl get deployment -n gotcha || true
-                '''
-            }
-        }
-
-        stage('Deploy Backend') {
-            steps {
-                sh '''
-                kubectl set image deployment/gotcha-backend \
-                backend=${BACKEND_IMAGE}:${IMAGE_TAG} \
-                -n gotcha
-
-                kubectl rollout status deployment/gotcha-backend \
-                -n gotcha --timeout=300s
-                '''
-            }
-        }
-
-        stage('Deploy Frontend') {
-            steps {
-                sh '''
-                kubectl set image deployment/gotcha-frontend \
-                frontend=${FRONTEND_IMAGE}:${IMAGE_TAG} \
-                -n gotcha
-
-                kubectl rollout status deployment/gotcha-frontend \
-                -n gotcha --timeout=300s
-                '''
-            }
-        }
-
-        stage('Validate Deployment') {
-            steps {
-                sh '''
-                kubectl get pods -n gotcha -o wide
-                kubectl get svc -n gotcha
-                '''
             }
         }
     }
