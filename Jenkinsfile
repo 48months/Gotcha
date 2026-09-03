@@ -5,6 +5,8 @@ pipeline {
         AWS_REGION     = 'eu-west-1'
         AWS_ACCOUNT_ID = '558050136406'
 
+        AWS_CREDENTIAL = 'aws_prod'
+
         BACKEND_REPO   = 'thbs-gotcha-backend'
         FRONTEND_REPO  = 'thbs-gotcha-frontend'
 
@@ -17,48 +19,74 @@ pipeline {
     }
 
     stages {
+
+        stage('Verify AWS Account') {
+            steps {
+                withAWS(
+                    credentials: "${AWS_CREDENTIAL}",
+                    region: "${AWS_REGION}"
+                ) {
+                    sh '''
+                    echo "=== AWS Identity ==="
+                    aws sts get-caller-identity
+
+                    echo "=== Available EKS Clusters ==="
+                    aws eks list-clusters --region ${AWS_REGION}
+
+                    echo "=== ECR Repositories ==="
+                    aws ecr describe-repositories --region ${AWS_REGION}
+                    '''
+                }
+            }
+        }
+
         stage('Login to ECR') {
             steps {
-                sh '''
-                aws ecr get-login-password \
-                  --region ${AWS_REGION} | \
-                docker login \
-                  --username AWS \
-                  --password-stdin \
-                  ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
-                '''
+                withAWS(
+                    credentials: "${AWS_CREDENTIAL}",
+                    region: "${AWS_REGION}"
+                ) {
+                    sh '''
+                    aws ecr get-login-password \
+                    --region ${AWS_REGION} | \
+                    podman login \
+                    --username AWS \
+                    --password-stdin \
+                    ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
+                    '''
+                }
             }
         }
 
         stage('Build Angular') {
-    steps {
-        dir('frontend') {
-            sh '''
-            npm ci
-            npx ng build --configuration production
-            '''
+            steps {
+                dir('frontend') {
+                    sh '''
+                    npm ci
+                    npx ng build --configuration production
+                    '''
+                }
+            }
         }
-    }
-}
 
-stage('Verify Angular Build') {
-    steps {
-        dir('frontend') {
-            sh '''
-            echo "Build output:"
-            find dist
-            '''
+        stage('Verify Angular Build') {
+            steps {
+                dir('frontend') {
+                    sh '''
+                    echo "Build output:"
+                    find dist
+                    '''
+                }
+            }
         }
-    }
-}
 
         stage('Build Backend Docker Image') {
             steps {
                 sh '''
                 docker build \
-                  -t ${BACKEND_IMAGE}:${IMAGE_TAG} \
-                  -f backend/Dockerfile \
-                  backend
+                -t ${BACKEND_IMAGE}:${IMAGE_TAG} \
+                -f backend/Dockerfile \
+                backend
                 '''
             }
         }
@@ -67,32 +95,75 @@ stage('Verify Angular Build') {
             steps {
                 sh '''
                 docker build \
-                  -t ${FRONTEND_IMAGE}:${IMAGE_TAG} \
-                  -f frontend/Dockerfile \
-                  frontend
+                -t ${FRONTEND_IMAGE}:${IMAGE_TAG} \
+                -f frontend/Dockerfile \
+                frontend
                 '''
             }
         }
 
-        stage('Push Images') {
-    steps {
-        sh '''
-        podman push --remove-signatures \
-        ${BACKEND_IMAGE}:${IMAGE_TAG}
+        stage('Verify Images') {
+            steps {
+                sh '''
+                podman images
+                '''
+            }
+        }
 
-        podman push --remove-signatures \
-        ${FRONTEND_IMAGE}:${IMAGE_TAG}
-        '''
-    }
-}
+        stage('Push Backend Image') {
+            steps {
+                withAWS(
+                    credentials: "${AWS_CREDENTIAL}",
+                    region: "${AWS_REGION}"
+                ) {
+                    sh '''
+                    podman push \
+                    --remove-signatures \
+                    --format docker \
+                    ${BACKEND_IMAGE}:${IMAGE_TAG}
+                    '''
+                }
+            }
+        }
 
+        stage('Push Frontend Image') {
+            steps {
+                withAWS(
+                    credentials: "${AWS_CREDENTIAL}",
+                    region: "${AWS_REGION}"
+                ) {
+                    sh '''
+                    podman push \
+                    --remove-signatures \
+                    --format docker \
+                    ${FRONTEND_IMAGE}:${IMAGE_TAG}
+                    '''
+                }
+            }
+        }
 
         stage('Configure EKS') {
             steps {
+                withAWS(
+                    credentials: "${AWS_CREDENTIAL}",
+                    region: "${AWS_REGION}"
+                ) {
+                    sh '''
+                    aws eks update-kubeconfig \
+                    --region ${AWS_REGION} \
+                    --name ${CLUSTER_NAME}
+
+                    kubectl get nodes
+                    '''
+                }
+            }
+        }
+
+        stage('Verify Namespace & Deployments') {
+            steps {
                 sh '''
-                aws eks update-kubeconfig \
-                  --region ${AWS_REGION} \
-                  --name ${CLUSTER_NAME}
+                kubectl get ns gotcha || true
+                kubectl get deployment -n gotcha || true
                 '''
             }
         }
@@ -101,10 +172,11 @@ stage('Verify Angular Build') {
             steps {
                 sh '''
                 kubectl set image deployment/gotcha-backend \
-                  backend=${BACKEND_IMAGE}:${IMAGE_TAG} \
-                  -n gotcha
+                backend=${BACKEND_IMAGE}:${IMAGE_TAG} \
+                -n gotcha
 
-                kubectl rollout status deployment/gotcha-backend -n gotcha
+                kubectl rollout status deployment/gotcha-backend \
+                -n gotcha --timeout=300s
                 '''
             }
         }
@@ -113,10 +185,20 @@ stage('Verify Angular Build') {
             steps {
                 sh '''
                 kubectl set image deployment/gotcha-frontend \
-                  frontend=${FRONTEND_IMAGE}:${IMAGE_TAG} \
-                  -n gotcha
+                frontend=${FRONTEND_IMAGE}:${IMAGE_TAG} \
+                -n gotcha
 
-                kubectl rollout status deployment/gotcha-frontend -n gotcha
+                kubectl rollout status deployment/gotcha-frontend \
+                -n gotcha --timeout=300s
+                '''
+            }
+        }
+
+        stage('Validate Deployment') {
+            steps {
+                sh '''
+                kubectl get pods -n gotcha -o wide
+                kubectl get svc -n gotcha
                 '''
             }
         }
@@ -134,8 +216,10 @@ stage('Verify Angular Build') {
 
         always {
             sh '''
+            podman image prune -af || true
             docker system prune -af || true
             '''
+
             cleanWs()
         }
     }
