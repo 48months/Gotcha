@@ -6,6 +6,9 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
+
+  storageClassName: gp3
+
   resources:
     requests:
       storage: 10Gi
@@ -18,7 +21,6 @@ metadata:
   namespace: gotcha
 spec:
   replicas: 1
-
   selector:
     matchLabels:
       app: mongodb
@@ -40,6 +42,14 @@ spec:
         - name: mongodb-storage
           mountPath: /data/db
 
+        resources:
+          requests:
+            cpu: "250m"
+            memory: "512Mi"
+          limits:
+            cpu: "500m"
+            memory: "1Gi"
+
       volumes:
       - name: mongodb-storage
         persistentVolumeClaim:
@@ -56,5 +66,8 @@ spec:
     app: mongodb
 
   ports:
-  - port: 27017
+  - name: mongodb
+    port: 27017
     targetPort: 27017
+
+  type: ClusterIP
