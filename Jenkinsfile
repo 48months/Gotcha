@@ -167,7 +167,7 @@ pipeline {
                     echo "=== Apply Ingress ==="
                     kubectl apply -f Ingress-controller.yaml
 
-                    kubectl delete pvc mongodb-pvc -n gotcha
+                    kubectl delete pvc mongodb-pvc -n gotcha --ignore-not-found=true
 
                     kubectl apply -f mongodb.yaml
 
