@@ -167,6 +167,8 @@ pipeline {
                     echo "=== Apply Ingress ==="
                     kubectl apply -f Ingress-controller.yaml
 
+                    kubectl delete pvc mongodb-pvc -n gotcha
+
                     kubectl apply -f mongodb.yaml
 
                     echo "=== Update Backend Image ==="
