@@ -20,7 +20,7 @@ metadata:
   name: mongodb
   namespace: gotcha
 spec:
-  replicas: 1
+  replicas: 0
   selector:
     matchLabels:
       app: mongodb
