@@ -155,6 +155,8 @@ pipeline {
                     echo "=== Verify Cluster Access ==="
                     kubectl get nodes
 
+                    kubectl delete namespace gotcha
+
                     echo "=== Create Namespace ==="
                     kubectl apply -f namespace.yaml
 
